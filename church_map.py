@@ -3,39 +3,71 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 
-# --- [중요] 지부장님의 구글 시트 웹 게시 URL을 여기에 붙여넣으세요 ---
-GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQK02XkY_Hh8I448_A7TYorUfhy9u_3ufzONkqVfX8nCi_8uwID-0u6mHtCdcdkj9TmSDghEKj7H75h/pub?output=csv" "여기에_복사한_주소를_넣으세요"
+# --- [1] 지부장님이 주신 구글 시트 URL 연결 ---
+GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQK02XkY_Hh8I448_A7TYorUfhy9u_3ufzONkqVfX8nCi_8uwID-0u6mHtCdcdkj9TmSDghEKj7H75h/pub?output=csv"
 
+# 웹 페이지 설정
 st.set_page_config(page_title="베트남 사역 실시간 지도", layout="wide")
-st.title("🇻🇳 베트남 교회 사역 실시간 공유 시스템")
+st.title("🇻🇳 베트남 교회 사역 실시간 현황판")
+st.markdown("지부장님이 구글 시트를 수정하면 이 지도는 **실시간으로 자동 업데이트**됩니다.")
 
-# 데이터를 구글 시트에서 직접 가져오는 함수
-@st.cache_data(ttl=600) # 10분마다 데이터를 새로고침합니다
+# 데이터를 구글 시트에서 가져오는 함수
+@st.cache_data(ttl=60) # 1분마다 새로운 데이터가 있는지 확인합니다
 def load_data():
-    return pd.read_csv(GOOGLE_SHEET_URL)
+    try:
+        # 구글 시트 읽기
+        data = pd.read_csv(GOOGLE_SHEET_URL)
+        return data
+    except Exception as e:
+        st.error(f"구글 시트에 연결할 수 없습니다: {e}")
+        return None
 
-try:
-    df = load_data()
-    
-    # 지도 생성
-    m = folium.Map(location=[df['Latitude'].mean(), df['Longitude'].mean()], zoom_start=6)
+# 데이터 불러오기 실행
+df = load_data()
 
-    for index, row in df.iterrows():
-        info_text = f"<b>{row['Name']}</b><br>지도자: {row['Leader']}<br>연락처: {row['Phone']}"
+if df is not None:
+    try:
+        # 1. 지도 생성 (데이터에 등록된 모든 교회의 중앙 지점 찾기)
+        m = folium.Map(location=[df['Latitude'].mean(), df['Longitude'].mean()], zoom_start=6)
+
+        # 2. 교회 마커 하나씩 찍기
+        for index, row in df.iterrows():
+            # 마커를 눌렀을 때 나올 정보 (이름, 지도자, 전화번호)
+            info_text = f"""
+            <div style='width:200px'>
+                <b>{row['Name']}</b><br>
+                성함: {row['Leader']}<br>
+                연락처: {row['Phone']}<br>
+                주소: {row['Address']}
+            </div>
+            """
+            
+            # 분류(Category)에 따른 색상 구분
+            cat = str(row['Category'])
+            if "건축" in cat:
+                map_color = "blue"    # 건축교회는 파란색
+            elif "일반" in cat:
+                map_color = "red"     # 일반교회는 빨간색
+            else:
+                map_color = "orange"  # 그 외는 주황색
+            
+            # 지도에 십자가 마커 추가
+            folium.Marker(
+                location=[row['Latitude'], row['Longitude']],
+                popup=folium.Popup(info_text, max_width=300),
+                tooltip=row['Name'],
+                icon=folium.Icon(color=map_color, icon='plus', prefix='glyphicon')
+            ).add_to(m)
+
+        # 3. 화면에 지도 출력
+        st_folium(m, width="100%", height=600)
         
-        category_str = str(row['Category'])
-        map_color = "blue" if "건축" in category_str else "red" if "일반" in category_str else "orange"
-        
-        folium.Marker(
-            location=[row['Latitude'], row['Longitude']],
-            popup=folium.Popup(info_text, max_width=300),
-            tooltip=row['Name'],
-            icon=folium.Icon(color=map_color, icon='plus', prefix='glyphicon')
-        ).add_to(m)
+        # 4. 하단에 상세 목록 표 출력
+        st.subheader("📋 전체 사역 데이터 목록")
+        st.dataframe(df)
 
-    st_folium(m, width="100%", height=600)
-    st.subheader("📋 실시간 사역 현황 (구글 시트 연동)")
-    st.dataframe(df)
-
-except Exception as e:
-    st.error("구글 시트 데이터를 불러오지 못했습니다. URL을 확인해 주세요.")
+    except Exception as e:
+        st.warning("시트의 제목(헤더)을 확인해 주세요.")
+        st.info("첫 줄 제목이 Name, Latitude, Longitude, Category, Leader, Phone, Address 인지 확인 부탁드립니다.")
+else:
+    st.info("구글 시트 게시를 기다리는 중이거나 URL이 올바르지 않습니다.")
