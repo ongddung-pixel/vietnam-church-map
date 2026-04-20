@@ -4,7 +4,7 @@ import folium
 from streamlit_folium import st_folium
 
 # --- [1] 지부장님이 주신 구글 시트 URL 연결 ---
-GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQK02XkY_Hh8I448_A7TYorUfhy9u_3ufzONkqVfX8nCi_8uwID-0u6mHtCdcdkj9TmSDghEKj7H75h/pub?output=csv"
+GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQK02XkY_Hh8I448_A7TYorUfhy9u_3ufzONkqVfX8nCi_8uwID-0u6mHtCdcdkj9TmSDghEKj7H75h/pubhtml"
 
 # 웹 페이지 설정
 st.set_page_config(page_title="베트남 사역 실시간 지도", layout="wide")
