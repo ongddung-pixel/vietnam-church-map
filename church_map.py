@@ -4,7 +4,7 @@ import folium
 from streamlit_folium import st_folium
 
 # --- [중요] 지부장님의 구글 시트 웹 게시 URL을 여기에 붙여넣으세요 ---
-GOOGLE_SHEET_URL = "여기에_복사한_주소를_넣으세요"
+GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQK02XkY_Hh8I448_A7TYorUfhy9u_3ufzONkqVfX8nCi_8uwID-0u6mHtCdcdkj9TmSDghEKj7H75h/pub?output=csv" "여기에_복사한_주소를_넣으세요"
 
 st.set_page_config(page_title="베트남 사역 실시간 지도", layout="wide")
 st.title("🇻🇳 베트남 교회 사역 실시간 공유 시스템")
